@@ -17,7 +17,6 @@ x_scaler = joblib.load('x_scaler.pkl')
 y_scaler = joblib.load('y_scaler.pkl')
 
 '''Initialising Firebase '''
-# Load .env from the same directory as this script
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
