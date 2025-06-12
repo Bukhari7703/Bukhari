@@ -1,13 +1,8 @@
 from fastapi import FastAPI, Query
 from fastapi.responses import PlainTextResponse, JSONResponse
-from pydantic import BaseModel
-import pandas as pd
-import joblib
 import uvicorn
-from datetime import datetime, timedelta
-from firebase_admin import db
-from typing import Optional, List
-import time
+from datetime import datetime
+from typing import Optional
 from ASM_File import write_raw_data, delete_raw_data_log, get_all_log_id, read_raw_data
 from ASM_File import analyze_battery_features, ML_FEATURE_ORDER, pred_soh
 from ASM_File import write_charging_logs, read_charging_logs, display_charging_by_week, delete_charging_logs
@@ -124,7 +119,6 @@ async def delete_log(log_id: str = Query(..., description="The log_id to delete,
 async def obtain_feature_data(log_id: str = "now"):
     result = read_raw_data(log_id, None)
     if result["status"] != "success":
-        print('Failed to read raw data') 
         return result
     
     data_raw = result["data"]
@@ -138,7 +132,6 @@ async def obtain_feature_data(log_id: str = "now"):
 async def predict(log_id: str = "now"):
     result = read_raw_data(log_id, None)
     if result["status"] != "success":
-        print('Failed to read raw data') 
         return result
     
     data_raw = result["data"]

@@ -7,7 +7,8 @@ import joblib
 import firebase_admin
 from firebase_admin import credentials, db
 import os
-
+from dotenv import load_dotenv
+from pathlib import Path
 
 
 '''Initialising ML model'''
@@ -16,6 +17,10 @@ x_scaler = joblib.load('x_scaler.pkl')
 y_scaler = joblib.load('y_scaler.pkl')
 
 '''Initialising Firebase '''
+# Load .env from the same directory as this script
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
 firebase_config = {
     "type": os.getenv("FIREBASE_TYPE"),
     "project_id": os.getenv("FIREBASE_PROJECT_ID"),
@@ -26,7 +31,8 @@ firebase_config = {
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
     "token_uri": "https://oauth2.googleapis.com/token",
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
+    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL"),
+    "universe_domain": "googleapis.com"
 }
 
 cred = credentials.Certificate(firebase_config)
