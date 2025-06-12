@@ -29,7 +29,7 @@ firebase_config = {
     "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
 }
 
-cred = credentials.Certificate("firebase_config")
+cred = credentials.Certificate(firebase_config)
 firebase_admin.initialize_app(cred, {
     "databaseURL": "https://flutter-with-firebase-te-1f81e-default-rtdb.asia-southeast1.firebasedatabase.app"
 })
