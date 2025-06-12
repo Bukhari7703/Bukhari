@@ -1,6 +1,10 @@
-fastapi
-uvicorn[standard]
-firebase-admin
-pandas
-openpyxl
-python-multipart
+fastapi==0.110.0
+uvicorn==0.29.0
+pydantic==2.7.1
+firebase-admin==6.4.0
+pandas==2.2.2
+scikit-learn==1.4.2
+numpy==1.26.4
+scipy==1.13.1
+joblib==1.4.2
+python-dotenv==1.0.1
