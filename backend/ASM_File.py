@@ -20,8 +20,8 @@ y_scaler = joblib.load(os.path.join(BASE_DR, 'y_scaler.pkl'))
 
 '''Initialising Firebase '''
 # .env files holds the credentials for local hosting
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
+# env_path = Path(__file__).resolve().parent / ".env"
+# load_dotenv(dotenv_path=env_path)
 # load_dotenv()
 
 firebase_config = {
