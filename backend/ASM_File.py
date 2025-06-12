@@ -217,7 +217,7 @@ def analyze_battery_features(data: dict, nominal_capacity: float):
     return pd.DataFrame(summary_data)
 
 def calc_features(data: dict, nominal_capacity: float):
-    capacity = np.trapezoid(data['current'], data['time']) / 3600  # convert to Ah
+    capacity = np.trapz(data['current'], data['time']) / 3600  # convert to Ah
     currents = np.abs(data['current'])
     c_rate = currents / nominal_capacity
     max_V = np.max(data['voltage'])
