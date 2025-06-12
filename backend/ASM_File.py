@@ -6,8 +6,8 @@ from scipy.interpolate import interp1d
 import joblib
 import firebase_admin
 from firebase_admin import credentials, db
-import time
-import threading
+import os
+
 
 
 '''Initialising ML model'''
@@ -15,9 +15,21 @@ model = joblib.load('battery_model.pkl')
 x_scaler = joblib.load('x_scaler.pkl')
 y_scaler = joblib.load('y_scaler.pkl')
 
-
 '''Initialising Firebase '''
-cred = credentials.Certificate("flutter-with-firebase.json")
+firebase_config = {
+    "type": os.getenv("FIREBASE_TYPE"),
+    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+    "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace('\\n', '\n'),
+    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
+}
+
+cred = credentials.Certificate("firebase_config")
 firebase_admin.initialize_app(cred, {
     "databaseURL": "https://flutter-with-firebase-te-1f81e-default-rtdb.asia-southeast1.firebasedatabase.app"
 })
