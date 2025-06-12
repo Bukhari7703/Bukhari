@@ -12,13 +12,17 @@ from pathlib import Path
 
 
 '''Initialising ML model'''
-model = joblib.load('battery_model.pkl')
-x_scaler = joblib.load('x_scaler.pkl')
-y_scaler = joblib.load('y_scaler.pkl')
+BASE_DR = os.path.dirname(os.path.abspath(__file__))
+model = joblib.load(os.path.join(BASE_DR, 'battery_model.pkl'))
+x_scaler = joblib.load(os.path.join(BASE_DR, 'x_scaler.pkl'))
+y_scaler = joblib.load(os.path.join(BASE_DR, 'y_scaler.pkl'))
+
 
 '''Initialising Firebase '''
+# .env files holds the credentials for local hosting
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
+# load_dotenv()
 
 firebase_config = {
     "type": os.getenv("FIREBASE_TYPE"),
@@ -33,11 +37,11 @@ firebase_config = {
     "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL"),
     "universe_domain": "googleapis.com"
 }
-
-cred = credentials.Certificate(firebase_config)
-firebase_admin.initialize_app(cred, {
-    "databaseURL": "https://flutter-with-firebase-te-1f81e-default-rtdb.asia-southeast1.firebasedatabase.app"
-})
+if not firebase_admin._apps:
+    cred = credentials.Certificate(firebase_config)
+    firebase_admin.initialize_app(cred, {
+        "databaseURL": "https://flutter-with-firebase-te-1f81e-default-rtdb.asia-southeast1.firebasedatabase.app"
+    })
 
 '''Handle Raw data'''
 def write_raw_data(filename):
