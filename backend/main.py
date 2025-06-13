@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Query
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.responses import PlainTextResponse, JSONResponse, FileResponse
 import uvicorn
 from datetime import datetime
 from typing import Optional
@@ -53,6 +53,9 @@ app = FastAPI(
 async def root():
     return {"message": "Battery ASM API is up and running!"}
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("favicon.ico")
 
 '''Handle raw data'''
 '''Write via excel, delete by passing its log_id, displaying past data's log_id, display raw_data by passing its log_id, '''
