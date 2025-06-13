@@ -44,42 +44,42 @@ if not firebase_admin._apps:
     })
 
 '''Handle Raw data'''
-def write_raw_data(filename):
-    try:
-        df = pd.read_excel(filename)
+# def write_raw_data(filename):
+#     try:
+#         df = pd.read_excel(filename)
 
-        voltage = df['voltage_v'].tolist()
-        current = df['current_a'].tolist()
-        time = df['time_s'].tolist()
+#         voltage = df['voltage_v'].tolist()
+#         current = df['current_a'].tolist()
+#         time = df['time_s'].tolist()
 
-        # Create structured data for logs
-        data_log = {
-            '0_timestamp': datetime.now().isoformat(),
-            'time_s': time,
-            'voltage_v': voltage,
-            'current_a': current
-        }
+#         # Create structured data for logs
+#         data_log = {
+#             '0_timestamp': datetime.now().isoformat(),
+#             'time_s': time,
+#             'voltage_v': voltage,
+#             'current_a': current
+#         }
 
-        # Upload to /raw_data (overwrite old data)
-        db.reference('/raw_data/time_s').set(time)
-        db.reference('/raw_data/current_a').set(current)
-        db.reference('/raw_data/voltage_v').set(voltage)
+#         # Upload to /raw_data (overwrite old data)
+#         db.reference('/raw_data/time_s').set(time)
+#         db.reference('/raw_data/current_a').set(current)
+#         db.reference('/raw_data/voltage_v').set(voltage)
 
-        # Upload to /raw_data_logs with current timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        db.reference(f'/raw_data_logs/{timestamp}').set(data_log)
+#         # Upload to /raw_data_logs with current timestamp
+#         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+#         db.reference(f'/raw_data_logs/{timestamp}').set(data_log)
 
-        return {
-            "status": "success",
-            "message": f"{filename} uploaded to /raw_data and /raw_data_logs/{timestamp}",
-            "log_id": timestamp
-        }
+#         return {
+#             "status": "success",
+#             "message": f"{filename} uploaded to /raw_data and /raw_data_logs/{timestamp}",
+#             "log_id": timestamp
+#         }
 
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Failed to upload data from {filename}: {str(e)}"
-        }
+#     except Exception as e:
+#         return {
+#             "status": "error",
+#             "message": f"Failed to upload data from {filename}: {str(e)}"
+#         }
 
 ### Delete the timestamps from the raw_data_logs at Firebase
 def delete_raw_data_log(log_id: str) -> dict:
@@ -249,46 +249,87 @@ def pred_soh(ml_feature_data):
     input_scaled = x_scaler.transform(ml_feature_data)
     predicted_scaled = model.predict(input_scaled)
     predicted_soh = y_scaler.inverse_transform(predicted_scaled.reshape(-1, 1)).ravel()[0]    
-    condition, rul = battery_condition(predicted_soh)
-    return predicted_soh, condition, rul
+    condition, recommend, rul = battery_condition(predicted_soh)
+    return predicted_soh, condition, recommend, rul
 
 def battery_condition(soh):
     def soh_recommendation(soh_val):
         if soh_val >= 90:
-            return "Excellent"
+            return (
+                "Excellent",
+                "Your battery health is excellent! For optimal longevity, avoid frequent deep discharges and extreme temperatures."
+            )
         elif 80 <= soh_val < 90:
-            return "Good"
+            return (
+                "Good",
+                "Battery is in good condition. To maintain health, charge regularly and avoid leaving at full or zero charge for long periods."
+            )
         elif 70 <= soh_val < 80:
-            return "Degraded - Monitor"
+            return (
+                "Degraded - Monitor",
+                "Battery shows noticeable degradation. Consider moderating discharge depth and reducing fast-charging to extend life."
+            )
         elif 60 <= soh_val < 70:
-            return "Poor - Needs Attention"
+            return (
+                "Poor - Needs Attention",
+                "Battery health is poor. Avoid fast charging and heavy use; plan maintenance to prevent performance issues."
+            )
         else:
-            return "Critical - Maintenance Required"
+            return (
+                "Critical - Maintenance Required",
+                "Battery is in critical condition. Immediate maintenance or replacement is strongly advised to ensure safety and reliability."
+            )
 
     def estimate_rul(soh_val):
-        drop_per_cycle = 0.2  # Empirical estimate
+        drop_per_cycle = 0.2  # Empirical estimate: SOH drops 0.2% per cycle
         return int((soh_val - 50) / drop_per_cycle) if soh_val > 50 else 0
 
-    return soh_recommendation(soh), estimate_rul(soh)
+    condition, recommend = soh_recommendation(soh)
+    rul = estimate_rul(soh)
+    return condition, recommend, rul
 
 
-'''Handle Usage Count (Charging logs)'''
+'''Handle Usage Pattern (Charging logs)'''
 def read_charging_logs():
     ref = db.reference('/charging_logs')
-    raw_data = ref.get()
+    logs = ref.get()
 
-    if not raw_data:
+    if not logs:
         return []  # Return an empty list if no logs
 
     try:
         # Convert all ISO 8601 strings to datetime objects
-        datetime_array = [datetime.fromisoformat(ts) for ts in raw_data.values()]
+        datetime_array = [datetime.fromisoformat(ts) for ts in logs.values()]
         datetime_array.sort()  # Optional: sort chronologically
         return datetime_array
 
     except Exception as e:
         print(f"[ERROR] Failed to parse charging logs: {e}")
         return []
+
+def get_charging_cycle_count():
+    try:
+        ref = db.reference('/charging_logs')
+        logs = ref.get()
+
+        if not logs:
+            return {
+                "status": "success",
+                "cycle_count": 0,
+                "message": "no charging logs found"
+            }
+
+        cycle_count = len(logs)
+        return {
+            "status": "success",
+            "cycle_count": cycle_count
+        }
+
+    except Exception as e:
+        return {
+            "status": f"Failed to calculate charging cycles: {str(e)}",
+            "cycle_count": 0
+        }
 
 def display_charging_by_week(charging_logs_array, start_week=1, end_week=None):
     weekly_log = defaultdict(list)

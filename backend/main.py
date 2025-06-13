@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 from ASM_File import write_raw_data, delete_raw_data_log, get_all_log_id, read_raw_data
 from ASM_File import analyze_battery_features, ML_FEATURE_ORDER, pred_soh
+from ASM_File import get_charging_cycle_count
 from ASM_File import write_charging_logs, read_charging_logs, display_charging_by_week, delete_charging_logs
 from ASM_File import calc_dtd,  write_dtd, read_dtd
 from ASM_File import est_soc
@@ -141,17 +142,24 @@ async def predict(log_id: str = "now"):
     feature_data = analyze_battery_features(data_raw, 4200)
     ml_features_data = feature_data[ML_FEATURE_ORDER].to_numpy()
     
-    soh, condition, rul = pred_soh(ml_features_data)
+    soh, condition, recommend, rul = pred_soh(ml_features_data)
     
     return {
         "SOH": f"{soh:.2f}%",
         "Battery Condition": condition,
+        "Recommendation" : recommend,
         "RUL": f"{rul} cycles"
     }
 
 
 '''Handle Usage Pattern data'''
-'''Write, delete via ISO timeformat, display by weeks '''
+'''Write, delete via ISO timeformat, display by weeks and usage cycle '''
+### Display Usage Cycle of Charging Logs
+@app.get("/usage_cycle")
+async def usage_cycle():
+    result = get_charging_cycle_count()
+    return result
+
 ### Display Summary of Charging Logs
 @app.get("/display_charging_logs", response_class=PlainTextResponse, tags = ["Usage Pattern Data"])
 async def display_charging_days(start_week: int = 1, end_week: str = "end"):
