@@ -394,7 +394,8 @@ def write_charging_logs(timestamp_str: str = None):
         }
 
     iso_timestamp = timestamp.isoformat()
-    db.reference('/charging_logs').set(iso_timestamp)
+    ref = db.reference('/charging_logs')
+    ref.child(iso_timestamp).set(iso_timestamp)
 
     return {
         "status": "success",
