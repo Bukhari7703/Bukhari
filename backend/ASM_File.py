@@ -20,9 +20,9 @@ y_scaler = joblib.load(os.path.join(BASE_DR, 'y_scaler.pkl'))
 
 '''Initialising Firebase '''
 # .env files holds the credentials for local hosting
-# env_path = Path(__file__).resolve().parent / ".env"
-# load_dotenv(dotenv_path=env_path)
-load_dotenv()
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
+# load_dotenv()
 
 firebase_config = {
     "type": os.getenv("FIREBASE_TYPE"),
@@ -81,6 +81,8 @@ def write_raw_data(filename):
             "status": "error",
             "message": f"Failed to upload data from {filename}: {str(e)}"
         }
+
+write_raw_data(Rawfile1.xlsx)
 
 ### Delete the timestamps from the raw_data_logs at Firebase
 def delete_raw_data_log(log_id: str) -> dict:
