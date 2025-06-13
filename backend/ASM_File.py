@@ -44,42 +44,43 @@ if not firebase_admin._apps:
     })
 
 '''Handle Raw data'''
-# def write_raw_data(filename):
-#     try:
-#         df = pd.read_excel(filename)
+### Upload raw data via excel
+def write_raw_data(filename):
+    try:
+        df = pd.read_excel(filename)
 
-#         voltage = df['voltage_v'].tolist()
-#         current = df['current_a'].tolist()
-#         time = df['time_s'].tolist()
+        voltage = df['voltage_v'].tolist()
+        current = df['current_a'].tolist()
+        time = df['time_s'].tolist()
 
-#         # Create structured data for logs
-#         data_log = {
-#             '0_timestamp': datetime.now().isoformat(),
-#             'time_s': time,
-#             'voltage_v': voltage,
-#             'current_a': current
-#         }
+        # Create structured data for logs
+        data_log = {
+            '0_timestamp': datetime.now().isoformat(),
+            'time_s': time,
+            'voltage_v': voltage,
+            'current_a': current
+        }
 
-#         # Upload to /raw_data (overwrite old data)
-#         db.reference('/raw_data/time_s').set(time)
-#         db.reference('/raw_data/current_a').set(current)
-#         db.reference('/raw_data/voltage_v').set(voltage)
+        # Upload to /raw_data (overwrite old data)
+        db.reference('/raw_data/time_s').set(time)
+        db.reference('/raw_data/current_a').set(current)
+        db.reference('/raw_data/voltage_v').set(voltage)
 
-#         # Upload to /raw_data_logs with current timestamp
-#         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-#         db.reference(f'/raw_data_logs/{timestamp}').set(data_log)
+        # Upload to /raw_data_logs with current timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        db.reference(f'/raw_data_logs/{timestamp}').set(data_log)
 
-#         return {
-#             "status": "success",
-#             "message": f"{filename} uploaded to /raw_data and /raw_data_logs/{timestamp}",
-#             "log_id": timestamp
-#         }
+        return {
+            "status": "success",
+            "message": f"{filename} uploaded to /raw_data and /raw_data_logs/{timestamp}",
+            "log_id": timestamp
+        }
 
-#     except Exception as e:
-#         return {
-#             "status": "error",
-#             "message": f"Failed to upload data from {filename}: {str(e)}"
-#         }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to upload data from {filename}: {str(e)}"
+        }
 
 ### Delete the timestamps from the raw_data_logs at Firebase
 def delete_raw_data_log(log_id: str) -> dict:
