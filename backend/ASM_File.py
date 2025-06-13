@@ -20,9 +20,9 @@ y_scaler = joblib.load(os.path.join(BASE_DR, 'y_scaler.pkl'))
 
 '''Initialising Firebase '''
 # .env files holds the credentials for local hosting
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
-# load_dotenv()
+# env_path = Path(__file__).resolve().parent / ".env"
+# load_dotenv(dotenv_path=env_path)
+load_dotenv()
 
 firebase_config = {
     "type": os.getenv("FIREBASE_TYPE"),
@@ -81,8 +81,6 @@ def write_raw_data(filename):
             "status": "error",
             "message": f"Failed to upload data from {filename}: {str(e)}"
         }
-
-write_raw_data(Rawfile1.xlsx)
 
 ### Delete the timestamps from the raw_data_logs at Firebase
 def delete_raw_data_log(log_id: str) -> dict:
@@ -541,7 +539,6 @@ def read_dtd():
     return None
 
 
-
 '''Estimate SOC with current Voltage level'''
 def est_soc(voltage_reading: float) -> float:
     voltage_soc_data = np.array([
@@ -565,13 +562,6 @@ def est_soc(voltage_reading: float) -> float:
     voltage_reading = np.clip(voltage_reading, pack_voltage.min(), pack_voltage.max())
 
     return float(soc_estimator_3s(voltage_reading))
-
-
-
-
-
-
-
 
 
 
@@ -655,7 +645,7 @@ print('Discharging Event 1')
 Day_to_discharge = calc_day_to_discharge(Charging_days_array)
 '''
 
-''' 
+'''  ### Machine learning
 X scaler = 
 2055 total rows of data
 Train: 90% ; 1847 data

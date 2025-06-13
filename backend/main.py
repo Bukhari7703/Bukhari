@@ -13,10 +13,12 @@ from ASM_File import est_soc
 
 ''' 
 Queries
-
-20250607_200556 # Poor SOH
-20250607_200743 # Excellent SOH
-20250607_200928 # Excellent SOH
+Firebase raw data logs for your information
+"20250613_110602", -  97.53% SOH, Excellent (Ivan data)
+"20250613_110557", -  99% SOH, Excellent
+"20250613_110548", -  86% SOH, Good
+"20250613_110540", -  74% SOH, Degraded - Monitor
+"20250613_110340" - 67% SOH, Poor
 
 key = time_s, current_a, voltage_v ; use either of this to see the key
 log_id = recent = now // past = e.g. 20250607_200556
