@@ -155,7 +155,7 @@ async def predict(log_id: str = "now"):
 '''Handle Usage Pattern data'''
 '''Write, delete via ISO timeformat, display by weeks and usage cycle '''
 ### Display Usage Cycle of Charging Logs
-@app.get("/cycle_count")
+@app.get("/cycle_count", tags = ["Usage Pattern Data"])
 async def usage_cycle():
     cycle_count = get_charging_cycle_count()
     return cycle_count
