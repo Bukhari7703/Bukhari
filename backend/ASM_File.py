@@ -20,9 +20,9 @@ y_scaler = joblib.load(os.path.join(BASE_DR, 'y_scaler.pkl'))
 
 '''Initialising Firebase '''
 # .env files holds the credentials for local hosting
-# env_path = Path(__file__).resolve().parent / ".env"
-# load_dotenv(dotenv_path=env_path)
-load_dotenv()
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
+# load_dotenv()
 
 firebase_config = {
     "type": os.getenv("FIREBASE_TYPE"),
@@ -290,9 +290,9 @@ def battery_condition(soh):
     return condition, recommend, rul
 
 
-'''Handle Usage Pattern (Charging logs)'''
-def read_charging_logs():
-    ref = db.reference('/charging_logs')
+'''Handle Charging, Dishcarging and Usage Pattern Data'''
+def read_logs(log_type: str):
+    ref = db.reference(f'/{log_type}')
     logs = ref.get()
 
     if not logs:
@@ -305,36 +305,40 @@ def read_charging_logs():
         return datetime_array
 
     except Exception as e:
-        print(f"[ERROR] Failed to parse charging logs: {e}")
+        print(f"[ERROR] Failed to parse {log_type}: {e}")
         return []
 
-def get_charging_cycle_count():
+def get_logs_count(log_type: str):
     try:
-        ref = db.reference('/charging_logs')
+        ref = db.reference(f'/{log_type}')
         logs = ref.get()
 
         if not logs:
             return {
                 "status": "success",
-                "cycle_count": 0,
-                "message": "no charging logs found"
+                "log_type": log_type,
+                "log_count": 0,
+                "message": f"No entries found in {log_type}."
             }
 
-        cycle_count = len(logs)
         return {
             "status": "success",
-            "cycle_count": cycle_count
+            "log_type": log_type,
+            "log_count": len(logs),
+            "message": f"{log_type} contains {len(logs)} logs."
         }
 
     except Exception as e:
         return {
-            "status": f"Failed to calculate charging cycles: {str(e)}",
-            "cycle_count": 0
+            "status": "error",
+            "log_type": log_type,
+            "log_count": 0,
+            "message": f"Error counting logs in {log_type}: {str(e)}"
         }
 
-def display_charging_by_week(charging_logs_array, start_week=1, end_week=None):
+def display_logs_by_week(logs_array : str, start_week=1, end_week=None):
     weekly_log = defaultdict(list)
-    for dt in charging_logs_array:
+    for dt in logs_array:
         dt_date = dt.date()
         monday = dt_date - timedelta(days=dt_date.weekday())  # Normalize to Monday
         weekly_log[monday].append(dt)
@@ -371,9 +375,9 @@ def display_charging_by_week(charging_logs_array, start_week=1, end_week=None):
     output = ""
 
     if start_week == end_week:
-        output += f"\n Showing charging logs for week {start_week} \n"
+        output += f"\n Showing logs for week {start_week} \n"
     else:
-        output += f"\n Showing charging logs from week {start_week} to {end_week})\n"
+        output += f"\n Showing logs from week {start_week} to {end_week})\n"
         
     for idx, (monday, logs) in enumerate(reversed_weeks, start=1):
         if start_week <= idx <= end_week:
@@ -384,7 +388,7 @@ def display_charging_by_week(charging_logs_array, start_week=1, end_week=None):
 
     return output
 
-def write_charging_logs(timestamp_str: str = None): 
+def write_logs(log_type: str, timestamp_str: str = None): 
     try:
         timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else datetime.now()
     except ValueError:
@@ -394,20 +398,20 @@ def write_charging_logs(timestamp_str: str = None):
         }
 
     iso_timestamp = timestamp.isoformat()
-    ref = db.reference('/charging_logs')
+    ref = db.reference(f'/{log_type}')
     ref.child(iso_timestamp).set(iso_timestamp)
 
     return {
         "status": "success",
-        "message": f"Logged charging timestamp: {iso_timestamp}"
+        "message": f"Logged {log_type} timestamp: {iso_timestamp}"
     }
 
-def delete_charging_logs(timestamp: str = None, week: int = None):
-    ref = db.reference('/charging_logs')
+def delete_logs(log_type: str, timestamp: str = None, week: int = None):
+    ref = db.reference(f'/{log_type}')
     all_logs = ref.get()
 
     if not all_logs:
-        return {"status": "error", "message": "No charging logs found."}
+        return {"status": "error", "message": f"No {log_type} found."}
 
     deleted_keys = []
 
@@ -416,8 +420,14 @@ def delete_charging_logs(timestamp: str = None, week: int = None):
             if value == timestamp:
                 ref.child(key).delete()
                 deleted_keys.append(key)
-                return {"status": "success", "message": f"Deleted timestamp {timestamp}"}
-        return {"status": "error", "message": f"Timestamp {timestamp} not found."}
+                return {
+                    "status": "success", 
+                    "message": f"Deleted {log_type} timestamp {timestamp}"
+                    }
+        return {
+            "status": "error", 
+            "message": f"{log_type} timestamp {timestamp} not found."
+            }
 
     elif week is not None:
         # Parse all ISO timestamps into datetime objects
@@ -441,7 +451,7 @@ def delete_charging_logs(timestamp: str = None, week: int = None):
         if week > total_weeks or week < 1:
             return {
                 "status": "error",
-                "message": f"Only {total_weeks} weeks of data. You requested week {week}."
+                "message": f"Only {total_weeks} weeks of data in {log_type}. You requested week {week}."
             }
 
         reversed_weeks = list(reversed(sorted_weeks))
@@ -453,11 +463,14 @@ def delete_charging_logs(timestamp: str = None, week: int = None):
 
         return {
             "status": "success",
-            "message": f"Deleted {len(deleted_keys)} charging logs from week {week}.",
+            "message": f"Deleted {len(deleted_keys)} {log_type} logs from week {week}.",
             "deleted_keys": deleted_keys
         }
 
-    return {"status": "error", "message": "Please provide either timestamp or week number."}
+    return {
+        "status": "error",
+        "message": "Provide either timestamp or week number."
+    }
 
 
 '''Determination Day to discharge (dtd) using usage count'''
@@ -570,7 +583,6 @@ def est_soc(voltage_reading: float) -> float:
 ### Implementations
 ml_features = analyze_battery_features(0, 'Rawfile1.xlsx', 4200)
 print(ml_features)
-
 input_data = ml_features[ML_FEATURE_ORDER].to_numpy()
 print('')
 pred_soh(input_data)
@@ -582,7 +594,6 @@ input_data = np.array([[2.3, 0.00002,
 print('')
 pred_soh(input_data)
 '''
-
 
 ''' ### Discharging day algorithm
 Charging_days_array = [

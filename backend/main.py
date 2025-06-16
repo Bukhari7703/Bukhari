@@ -1,12 +1,12 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse, FileResponse
 import uvicorn
 from datetime import datetime
 from typing import Optional
+from pydantic import BaseModel
 from ASM_File import write_raw_data, delete_raw_data_log, get_all_log_id, read_raw_data
 from ASM_File import analyze_battery_features, ML_FEATURE_ORDER, pred_soh
-from ASM_File import get_charging_cycle_count
-from ASM_File import write_charging_logs, read_charging_logs, display_charging_by_week, delete_charging_logs
+from ASM_File import write_logs, read_logs, display_logs_by_week, delete_logs, get_logs_count
 from ASM_File import calc_dtd,  write_dtd, read_dtd
 from ASM_File import est_soc
 
@@ -38,8 +38,16 @@ app = FastAPI(
             "description": "Battery SOH, condition and RUL prediction endpoints."
         },
         {
-            "name": "Usage Pattern Data",
+            "name": "Charging Data",
             "description": "Endpoints related to uploading, displaying, and deleting charging logs."            
+        },
+        {
+            "name": "Discharging Data",
+            "description": "Endpoints related to uploading, displaying, and deleting manual & automatic dicharging logs."            
+        },
+        {
+            "name": "Usage Data",
+            "description": "Endpoints related to uploading, displaying, and deleting usage pattern data."            
         },
         {
             "name": "Day to Discharge",
@@ -60,7 +68,7 @@ async def root():
 async def favicon():
     return FileResponse("favicon.ico")
 
-'''Handle raw data'''
+'''Handle Raw Data'''
 '''Write via excel, delete by passing its log_id, displaying past data's log_id, display raw_data by passing its log_id, '''
 ### Display RAW data logs Timestamps
 @app.get("/display_log_id", tags=["Raw Data"])
@@ -154,33 +162,88 @@ async def predict(log_id: str = "now"):
     }
 
 
-'''Handle Usage Pattern data'''
-'''Write, delete via ISO timeformat, display by weeks and usage cycle '''
+'''Handle Charging data'''
+'''Write, delete via ISO timeformat, display by weeks '''
 ### Display Usage Cycle of Charging Logs
-@app.get("/cycle_count", tags = ["Usage Pattern Data"])
-async def usage_cycle():
-    cycle_count = get_charging_cycle_count()
-    return cycle_count
+@app.get("/charge_count", tags = ["Charging Data"])
+async def charging_count():
+    return get_logs_count("charging_logs")
 
 ### Display Summary of Charging Logs
-@app.get("/display_charging_logs", response_class=PlainTextResponse, tags = ["Usage Pattern Data"])
+@app.get("/display_charging_logs", response_class=PlainTextResponse, tags = ["Charging Data"])
 async def display_charging_days(start_week: int = 1, end_week: str = "end"):
-    charge_logs = read_charging_logs()
-    disp_charging = display_charging_by_week(charge_logs, start_week, end_week)
+    charge_log = read_logs("charging_logs")
+    disp_charging = display_logs_by_week(charge_log, start_week, end_week)
     return disp_charging
 
 ### Write to Charging Logs in Firebase
-@app.post("/write_charging_log", tags=["Usage Pattern Data"])
+@app.post("/write_charging_log", tags=["Charging Data"])
 async def write_charging_log(timestamp: Optional[str] = Query(None, description="ISO 8601 datetime, e.g. 2025-06-09T14:30:00")):
-    return write_charging_logs(timestamp)
+    return write_logs("charging_logs", timestamp)
 
-### Delete the charging logs in Firebase
-@app.delete("/delete_charging_log", tags=["Usage Pattern Data"])
+### Delete the Charging Logs in Firebase
+@app.delete("/delete_charging_log", tags=["Charging Data"])
 async def delete_charging_log(
     timestamp: Optional[str] = Query(None, description="ISO timestamp to delete"),
     week: Optional[int] = Query(None, description="Week number to delete (latest week is 1)")
 ):
-    return delete_charging_logs(timestamp=timestamp, week=week)
+    return delete_logs("charging_logs", timestamp=timestamp, week=week)
+
+
+'''Handle Discharging data'''
+'''Write, delete via ISO timeformat, display by weeks '''
+### Display Discharging Cycle
+@app.get("/discharge_count", tags = ["Discharging Data"])
+async def discharging_count():
+    return get_logs_count("discharging_logs")
+
+### Display Summary of Discharging Logs
+@app.get("/display_discharging_logs", response_class=PlainTextResponse, tags = ["Discharging Data"])
+async def display_discharging_days(start_week: int = 1, end_week: str = "end"):
+    discharge_log = read_logs("discharging_logs")
+    disp_discharging = display_logs_by_week(discharge_log, start_week, end_week)
+    return disp_discharging
+
+### Write to Discharging Logs in Firebase
+@app.post("/write_discharging_log", tags=["Discharging Data"])
+async def write_discharging_log(timestamp: Optional[str] = Query(None, description="ISO 8601 datetime, e.g. 2025-06-09T14:30:00")):
+    return write_logs("discharging_logs", timestamp)
+
+### Delete the Discharging Logs in Firebase
+@app.delete("/delete_discharging_log", tags=["Discharging Data"])
+async def delete_discharging_log(
+    timestamp: Optional[str] = Query(None, description="ISO timestamp to delete"),
+    week: Optional[int] = Query(None, description="Week number to delete (latest week is 1)")
+):
+    return delete_logs("discharging_logs", timestamp=timestamp, week=week)
+
+
+'''Handle Usage data'''
+'''Write, delete via ISO timeformat, display by weeks '''
+### Display Usage Cycle
+@app.get("/cycle_count", tags = ["Usage Data"])
+async def usage_count():
+    return get_logs_count("charging_logs")
+
+### Display Summary of Usage Logs
+@app.get("/display_usage_logs", response_class=PlainTextResponse, tags = ["Usage Data"])
+async def display_usage_days(start_week: int = 1, end_week: str = "end"):
+    usage_log = read_logs("usage_logs")
+    disp_usage = display_logs_by_week(usage_log, start_week, end_week)
+    return disp_usage
+
+### Write to Usage Logs in Firebase
+@app.post("/write_usage_log", tags=["Usage Data"])
+async def write_usage_log(timestamp: Optional[str] = Query(None, description="ISO 8601 datetime, e.g. 2025-06-09T14:30:00")):
+    return write_logs("usage_logs", timestamp)
+
+### Delete the Usage Logs in Firebase
+@app.delete("/delete_usage_log", tags=["Usage Data"])
+async def delete_usage_log(
+    timestamp: Optional[str] = Query(None, description="ISO timestamp to delete"),
+    week: Optional[int] = Query(None, description="Week number to delete (latest week is 1)")
+):
+    return delete_logs("usage_logs", timestamp=timestamp, week=week)
 
 
 '''Estimation of day to discharge(dtd)'''
@@ -188,7 +251,7 @@ async def delete_charging_log(
 ### Calculate day of discharge based on Charging Logs
 @app.get("/day_of_discharge", tags = ["Day to Discharge"])
 async def day_to_discharge():
-    charge_logs = read_charging_logs()
+    charge_logs = read_logs()
     ASM_output = calc_dtd(charge_logs)
     discharge_datetime = ASM_output["recommended_discharge_day"]
     write_dtd(discharge_datetime)
