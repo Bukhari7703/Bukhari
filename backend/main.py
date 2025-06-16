@@ -251,7 +251,7 @@ async def delete_usage_log(
 ### Calculate day of discharge based on Charging Logs
 @app.get("/day_of_discharge", tags = ["Day to Discharge"])
 async def day_to_discharge():
-    charge_logs = read_logs()
+    charge_logs = read_logs("charging_logs")
     ASM_output = calc_dtd(charge_logs)
     discharge_datetime = ASM_output["recommended_discharge_day"]
     write_dtd(discharge_datetime)
