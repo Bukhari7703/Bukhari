@@ -137,7 +137,9 @@ def read_raw_data(log_id: str = "now", key: str = None):
         }
 
     available_keys = list(data.keys())
-
+    def extract_values(d):
+        return list(d.values()) if isinstance(d, dict) else []
+    
     # If specific key is requested, return only that key
     if key:
         if key in data:
@@ -146,7 +148,7 @@ def read_raw_data(log_id: str = "now", key: str = None):
                 "status": "success",
                 "message": (f"Returning only key: {key}"),
                 "available_keys": available_keys,
-                "data": {key: data[key]}
+                "data": {key: extract_values(data[key])}
             }
         else:
             return {
@@ -164,9 +166,9 @@ def read_raw_data(log_id: str = "now", key: str = None):
             "message": f"Returning all key:",
             "available_keys": available_keys,
             "data": {
-                "time_s": data["time_s"],
-                "voltage_v": data["voltage_v"],
-                "current_a": data["current_a"]
+                "time_s": extract_values(data["time_s"]),
+                "voltage_v": extract_values(data["voltage_v"]),
+                "current_a": extract_values(data["current_a"])
             }
         }
     
