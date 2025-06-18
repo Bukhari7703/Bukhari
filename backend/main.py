@@ -228,14 +228,14 @@ async def usage_count():
 ### Display Summary of Usage Logs
 @app.get("/display_usage_logs", response_class=PlainTextResponse, tags = ["Usage Data"])
 async def display_usage_days(start_week: int = 1, end_week: str = "end"):
-    usage_log = read_logs("usage_logs")
+    usage_log = read_logs("charging_logs")
     disp_usage = display_logs_by_week(usage_log, start_week, end_week)
     return disp_usage
 
 ### Write to Usage Logs in Firebase
 @app.post("/write_usage_log", tags=["Usage Data"])
 async def write_usage_log(timestamp: Optional[str] = Query(None, description="ISO 8601 datetime, e.g. 2025-06-09T14:30:00")):
-    return write_logs("usage_logs", timestamp)
+    return write_logs("charging_logs", timestamp)
 
 ### Delete the Usage Logs in Firebase
 @app.delete("/delete_usage_log", tags=["Usage Data"])
@@ -243,7 +243,7 @@ async def delete_usage_log(
     timestamp: Optional[str] = Query(None, description="ISO timestamp to delete"),
     week: Optional[int] = Query(None, description="Week number to delete (latest week is 1)")
 ):
-    return delete_logs("usage_logs", timestamp=timestamp, week=week)
+    return delete_logs("charging_logs", timestamp=timestamp, week=week)
 
 
 '''Estimation of day to discharge(dtd)'''
