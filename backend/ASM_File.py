@@ -229,7 +229,8 @@ def calc_features(data: dict, nominal_capacity: float):
     max_I = np.max(data['current'])
     min_I = np.min(data['current'])
     mean_I = np.mean(np.abs(data['current']))
-    droprate_V = (data['voltage'][0] - data['voltage'][-1]) / 24
+    duration_hr = (data['time'][-1] - data['time'][0]) /3600
+    droprate_V = (data['voltage'][0] - data['voltage'][-1]) / duration_hr
     
     return (
         capacity, np.mean(c_rate),
