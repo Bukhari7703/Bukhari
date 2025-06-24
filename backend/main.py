@@ -14,11 +14,11 @@ from ASM_File import est_soc
 ''' 
 Queries
 Firebase raw data logs for your information
-"20250613_110602", -  97.53% SOH, Excellent (Ivan data)
-"20250613_110557", -  99% SOH, Excellent
-"20250613_110548", -  86% SOH, Good
-"20250613_110540", -  74% SOH, Degraded - Monitor
-"20250613_110340" - 67% SOH, Poor
+"DIY", -  97.53% SOH, Excellent (Ivan data)
+"20250625_025501", -  98.92% SOH, Excellent
+"DIY", -  86% SOH, Good
+"DIY", -  74% SOH, Degraded - Monitor
+"20250625_032133" - 67% SOH, Poor
 
 key = time_s, current_a, voltage_v ; use either of this to see the key
 log_id = recent = now // past = e.g. 20250607_200556
@@ -130,7 +130,7 @@ async def delete_log(log_id: str = Query(..., description="The log_id to delete,
 '''Obtain feature data from raw data then predict SOH, RUL and Battery condition'''
 ### Process RAW data to get FEATURE data
 @app.get("/process", tags=["Machine Learning"])
-async def obtain_feature_data(log_id: str = "now"):
+async def obtain_feature_data(log_id: str = "20250625_025501"):
     result = read_raw_data(log_id, None)
     if result["status"] != "success":
         return result
@@ -143,7 +143,7 @@ async def obtain_feature_data(log_id: str = "now"):
 
 ### Predict SOH, BATTERY CONDITION and RUL
 @app.get("/predict", tags=["Machine Learning"])
-async def predict(log_id: str = "now"):
+async def predict(log_id: str = "20250625_025501"):
     result = read_raw_data(log_id, None)
     if result["status"] != "success":
         return result

@@ -20,9 +20,9 @@ y_scaler = joblib.load(os.path.join(BASE_DR, 'y_scaler.pkl'))
 
 '''Initialising Firebase '''
 # .env files holds the credentials for local hosting
-# env_path = Path(__file__).resolve().parent / ".env"
-# load_dotenv(dotenv_path=env_path)
-load_dotenv()
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
+# load_dotenv()
 
 firebase_config = {
     "type": os.getenv("FIREBASE_TYPE"),
@@ -45,7 +45,44 @@ if not firebase_admin._apps:
 
 '''Handle Raw data'''
 ### Upload raw data via excel
-def write_raw_data(filename):
+# def write_raw_data(filename):
+#     try:
+#         df = pd.read_excel(filename)
+
+#         voltage = df['voltage_v'].tolist()
+#         current = df['current_a'].tolist()
+#         time = df['time_s'].tolist()
+
+#         # Create structured data for logs
+#         data_log = {
+#             '0_timestamp': datetime.now().isoformat(),
+#             'time_s': time,
+#             'voltage_v': voltage,
+#             'current_a': current
+#         }
+
+#         # Upload to /raw_data (overwrite old data)
+#         db.reference('/raw_data/time_s').set(time)
+#         db.reference('/raw_data/current_a').set(current)
+#         db.reference('/raw_data/voltage_v').set(voltage)
+
+#         # Upload to /raw_data_logs with current timestamp
+#         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+#         db.reference(f'/raw_data_logs/{timestamp}').set(data_log)
+
+#         return {
+#             "status": "success",
+#             "message": f"{filename} uploaded to /raw_data and /raw_data_logs/{timestamp}",
+#             "log_id": timestamp
+#         }
+
+#     except Exception as e:
+#         return {
+#             "status": "error",
+#             "message": f"Failed to upload data from {filename}: {str(e)}"
+#         }
+
+def write_raw_data(filename):   
     try:
         df = pd.read_excel(filename)
 
@@ -53,26 +90,19 @@ def write_raw_data(filename):
         current = df['current_a'].tolist()
         time = df['time_s'].tolist()
 
-        # Create structured data for logs
-        data_log = {
-            '0_timestamp': datetime.now().isoformat(),
-            'time_s': time,
-            'voltage_v': voltage,
-            'current_a': current
-        }
-
-        # Upload to /raw_data (overwrite old data)
-        db.reference('/raw_data/time_s').set(time)
-        db.reference('/raw_data/current_a').set(current)
-        db.reference('/raw_data/voltage_v').set(voltage)
+        # Upload to /raw_data (overwrite old data with random-keyed structure)
 
         # Upload to /raw_data_logs with current timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        db.reference(f'/raw_data_logs/{timestamp}').set(data_log)
+        log_ref = db.reference(f'/raw_data_logs/{timestamp}')
+        for key, values in zip(['time_s', 'voltage_v', 'current_a'], [time, voltage, current]):
+            node_ref = log_ref.child(key)
+            for value in values:
+                node_ref.push(value)
 
         return {
             "status": "success",
-            "message": f"{filename} uploaded to /raw_data and /raw_data_logs/{timestamp}",
+            "message": f"{filename} uploaded to /raw_data and /raw_data_logs/{timestamp} using random keys",
             "log_id": timestamp
         }
 
