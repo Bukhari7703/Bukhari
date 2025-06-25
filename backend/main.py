@@ -130,7 +130,7 @@ async def delete_log(log_id: str = Query(..., description="The log_id to delete,
 '''Obtain feature data from raw data then predict SOH, RUL and Battery condition'''
 ### Process RAW data to get FEATURE data
 @app.get("/process", tags=["Machine Learning"])
-async def obtain_feature_data(log_id: str = "20250625_025501"):
+async def obtain_feature_data(log_id: str = "now"):
     result = read_raw_data(log_id, None)
     if result["status"] != "success":
         return result
@@ -143,7 +143,7 @@ async def obtain_feature_data(log_id: str = "20250625_025501"):
 
 ### Predict SOH, BATTERY CONDITION and RUL
 @app.get("/predict", tags=["Machine Learning"])
-async def predict(log_id: str = "20250625_025501"):
+async def predict(log_id: str = "now"):
     result = read_raw_data(log_id, None)
     if result["status"] != "success":
         return result
